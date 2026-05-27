@@ -663,11 +663,12 @@
 
       <footer class="actions">
         <div class="action-group">
-          <button class="btn" id="prevBtn" type="button">Назад</button>
-          <button class="btn" id="nextBtn" type="button">Далее</button>
+          <button class="btn" id="wrongOnlyBtn" type="button">По ошибкам</button>
+          <button class="btn" id="resetBtn" type="button">Сбросить</button>
         </div>
         <div class="action-group">
-          <button class="btn" id="resetBtn" type="button">Сбросить</button>
+          <button class="btn" id="prevBtn" type="button">Назад</button>
+          <button class="btn" id="nextBtn" type="button">Далее</button>
           <button class="btn primary" id="checkBtn" type="button">Проверить</button>
         </div>
       </footer>
@@ -35664,11 +35665,11 @@
   {
     "page": 557,
     "question_number": 557,
-    "question": "Как ДОЛГО вирус гепатита С может сохранять свои свойства при комнатной температуре на контаминированных поверхностях",
+    "question": "Как долго вирус гепатита С может сохранять свои свойства при комнатной температуре на контаминированных поверхностях",
     "instruction": "Выберите один ответ:",
     "answers": [
       {
-        "text": "ЦГЗ недели",
+        "text": "З недели",
         "mark": "правильно"
       },
       {
@@ -37468,6 +37469,7 @@
       prevBtn: document.getElementById('prevBtn'),
       nextBtn: document.getElementById('nextBtn'),
       checkBtn: document.getElementById('checkBtn'),
+      wrongOnlyBtn: document.getElementById('wrongOnlyBtn'),
       resetBtn: document.getElementById('resetBtn'),
       navGrid: document.getElementById('navGrid'),
       navMeta: document.getElementById('navMeta')
@@ -37541,6 +37543,7 @@
       els.prevBtn.disabled = true;
       els.nextBtn.disabled = true;
       els.checkBtn.disabled = true;
+      els.wrongOnlyBtn.disabled = true;
       renderNav();
     }
 
@@ -37556,6 +37559,7 @@
 
       els.instruction.classList.remove('is-hidden');
       els.checkBtn.disabled = false;
+      els.wrongOnlyBtn.disabled = false;
 
       const questionIndex = currentQuestionIndex();
       const question = questions[questionIndex];
@@ -37690,15 +37694,39 @@
       render();
     }
 
-    function resetAll() {
-      if (!state) {
+    function resetCurrentQuestion() {
+      if (!state || questions.length === 0) {
         return;
       }
 
-      state.current = 0;
-      state.selections = questions.map(() => new Set());
-      state.checked = questions.map(() => null);
+      const questionIndex = currentQuestionIndex();
+      state.selections[questionIndex] = new Set();
+      state.checked[questionIndex] = null;
       render();
+    }
+
+    function startWrongOnlyTest() {
+      if (!state || questions.length === 0) {
+        return;
+      }
+
+      const wrongQuestionIndexes = state.checked
+        .map((value, index) => value === false ? index : -1)
+        .filter(index => index !== -1);
+
+      if (wrongQuestionIndexes.length === 0) {
+        els.result.className = 'result empty';
+        els.result.textContent = 'Неправильно решенных вопросов пока нет';
+        return;
+      }
+
+      const confirmed = window.confirm('Вы точно хотите пройти тест по неправильно решенным вопросам?');
+      if (!confirmed) {
+        return;
+      }
+
+      const wrongQuestions = wrongQuestionIndexes.map(index => questions[index]);
+      startTest(wrongQuestions, 'Тест по ошибкам');
     }
 
     els.startMeta.textContent = `${allQuestions.length} вопросов всего`;
@@ -37755,7 +37783,8 @@
     });
 
     els.checkBtn.addEventListener('click', checkCurrent);
-    els.resetBtn.addEventListener('click', resetAll);
+    els.wrongOnlyBtn.addEventListener('click', startWrongOnlyTest);
+    els.resetBtn.addEventListener('click', resetCurrentQuestion);
 
     document.addEventListener('keydown', event => {
       if (!state || els.testApp.classList.contains('is-hidden')) {
