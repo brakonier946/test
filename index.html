@@ -63,7 +63,7 @@
 
     .mode-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 12px;
     }
 
@@ -80,6 +80,7 @@
       color: var(--text);
       cursor: pointer;
       font-weight: 800;
+      text-decoration: none;
       transition: background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
     }
 
@@ -608,6 +609,10 @@
           <span>Смешанный тест</span>
           <span class="mode-count" id="mixedCountHint"></span>
         </button>
+        <a class="mode-btn" href="answers.html">
+          <span>Ответы</span>
+          <span class="mode-count">155 вопросов</span>
+        </a>
       </div>
 
       <form class="mixed-form is-hidden" id="mixedForm">
