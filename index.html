@@ -51,7 +51,7 @@
     }
 
     .start-panel {
-      width: min(720px, 100%);
+      width: min(860px, 100%);
       display: grid;
       gap: 18px;
       padding: 24px;
@@ -63,8 +63,13 @@
 
     .mode-grid {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 12px;
+    }
+
+    .mode-grid.test-three-only {
+      grid-template-columns: minmax(0, 280px);
+      justify-content: center;
     }
 
     .mode-btn {
@@ -104,6 +109,70 @@
       padding-top: 2px;
     }
 
+    .topic-picker {
+      display: grid;
+      gap: 12px;
+      padding-top: 2px;
+    }
+
+    .topic-picker-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .topic-picker-head h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .topic-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .topic-btn {
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 11px 12px;
+      background: #fbfcfd;
+      color: var(--text);
+      text-align: left;
+      cursor: pointer;
+      font-weight: 750;
+      transition: background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+    }
+
+    .topic-btn:hover,
+    .topic-btn:focus-visible {
+      border-color: var(--accent);
+      background: #ffffff;
+      box-shadow: 0 0 0 4px var(--focus);
+      outline: none;
+    }
+
+    .topic-btn.all-topics {
+      grid-column: 1 / -1;
+      border-color: var(--accent);
+      background: var(--surface-2);
+      color: var(--accent-dark);
+    }
+
+    .topic-count {
+      flex: 0 0 auto;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
     .number-field {
       display: grid;
       gap: 7px;
@@ -125,7 +194,7 @@
 
     .scope-options {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 8px;
     }
 
@@ -532,6 +601,19 @@
         grid-template-columns: 1fr;
       }
 
+      .topic-picker-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .topic-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .topic-btn.all-topics {
+        grid-column: auto;
+      }
+
       .nav-panel {
         position: static;
         max-height: none;
@@ -596,24 +678,36 @@
         <div class="meta" id="startMeta"></div>
       </div>
 
-      <div class="mode-grid" aria-label="Выбор теста">
-        <button class="mode-btn" id="testOneBtn" type="button">
+      <div class="mode-grid test-three-only" aria-label="Выбор теста">
+        <button class="mode-btn is-hidden" id="testOneBtn" type="button">
           <span>Тест 1</span>
           <span class="mode-count" id="testOneCount"></span>
         </button>
-        <button class="mode-btn" id="testTwoBtn" type="button">
+        <button class="mode-btn is-hidden" id="testTwoBtn" type="button">
           <span>Тест 2</span>
           <span class="mode-count" id="testTwoCount"></span>
         </button>
-        <button class="mode-btn" id="mixedBtn" type="button">
+        <button class="mode-btn" id="testThreeBtn" type="button">
+          <span>Тест 3</span>
+          <span class="mode-count" id="testThreeCount"></span>
+        </button>
+        <button class="mode-btn is-hidden" id="mixedBtn" type="button">
           <span>Смешанный тест</span>
           <span class="mode-count" id="mixedCountHint"></span>
         </button>
-        <a class="mode-btn" href="answers.html">
+        <a class="mode-btn is-hidden" href="answers.html">
           <span>Ответы</span>
           <span class="mode-count">155 вопросов</span>
         </a>
       </div>
+
+      <section class="topic-picker is-hidden" id="testThreeTopics" aria-labelledby="testThreeTopicsTitle">
+        <div class="topic-picker-head">
+          <h2 id="testThreeTopicsTitle">Тест 3: выберите тему</h2>
+          <span class="meta">Лучевая диагностика</span>
+        </div>
+        <div class="topic-grid" id="testThreeTopicGrid"></div>
+      </section>
 
       <form class="mixed-form is-hidden" id="mixedForm">
         <fieldset class="scope-field">
@@ -630,6 +724,10 @@
             <label class="scope-option">
               <input type="radio" name="mixedScope" value="test2">
               <span>Только тест 2</span>
+            </label>
+            <label class="scope-option">
+              <input type="radio" name="mixedScope" value="test3">
+              <span>Только тест 3</span>
             </label>
           </div>
         </fieldset>
@@ -37422,11 +37520,23 @@
 ]
   </script>
 
+  <script src="radiology_questions.js"></script>
   <script>
-    const allQuestions = JSON.parse(document.getElementById('questionsData').textContent);
+    const originalQuestions = JSON.parse(document.getElementById('questionsData').textContent);
+    const radiologyQuestions = window.radiologyQuestions || [];
+    const allQuestions = [...originalQuestions, ...radiologyQuestions];
     const TEST_ONE_COUNT = 789;
+    const TEST_TWO_COUNT = 626;
     const testOneQuestions = allQuestions.slice(0, TEST_ONE_COUNT);
-    const testTwoQuestions = allQuestions.slice(TEST_ONE_COUNT);
+    const testTwoQuestions = allQuestions.slice(TEST_ONE_COUNT, TEST_ONE_COUNT + TEST_TWO_COUNT);
+    const testThreeQuestions = radiologyQuestions;
+    const testThreeTopicLabels = new Map([
+      ['Лучевая диагностика заболеваний органов дыхания и средостения', 'Органы дыхания и средостение'],
+      ['Лучевая диагностика заболеваний пищеварительной системы', 'Пищеварительная система'],
+      ['Лучевая диагностика заболеваний опорно-двигательного аппарата', 'Опорно-двигательный аппарат'],
+      ['Лучевая диагностика заболеваний сердечно-сосудистой системы', 'Сердечно-сосудистая система'],
+      ['Лучевая диагностика заболеваний мочевыделительной системы и органов таза', 'Мочевыделительная система и органы таза']
+    ]);
     let questions = [];
     let state = null;
 
@@ -37456,6 +37566,9 @@
       startMeta: document.getElementById('startMeta'),
       testOneBtn: document.getElementById('testOneBtn'),
       testTwoBtn: document.getElementById('testTwoBtn'),
+      testThreeBtn: document.getElementById('testThreeBtn'),
+      testThreeTopics: document.getElementById('testThreeTopics'),
+      testThreeTopicGrid: document.getElementById('testThreeTopicGrid'),
       mixedBtn: document.getElementById('mixedBtn'),
       mixedForm: document.getElementById('mixedForm'),
       mixedCount: document.getElementById('mixedCount'),
@@ -37463,6 +37576,7 @@
       mixedScopeInputs: document.querySelectorAll('input[name="mixedScope"]'),
       testOneCount: document.getElementById('testOneCount'),
       testTwoCount: document.getElementById('testTwoCount'),
+      testThreeCount: document.getElementById('testThreeCount'),
       mixedCountHint: document.getElementById('mixedCountHint'),
       questionMeta: document.getElementById('questionMeta'),
       progress: document.getElementById('progress'),
@@ -37503,6 +37617,9 @@
       if (scope === 'test2') {
         return { label: 'Смешанный тест · Тест 2', questions: testTwoQuestions };
       }
+      if (scope === 'test3') {
+        return { label: 'Смешанный тест · Тест 3', questions: testThreeQuestions };
+      }
       return { label: 'Смешанный тест · Все тесты', questions: allQuestions };
     }
 
@@ -37520,6 +37637,40 @@
       return shuffledIndexes(pool.length)
         .slice(0, count)
         .map(index => pool[index]);
+    }
+
+    function createTopicButton(label, activeQuestions, testLabel, isAllTopics = false) {
+      const button = document.createElement('button');
+      const text = document.createElement('span');
+      const count = document.createElement('span');
+
+      button.className = `topic-btn${isAllTopics ? ' all-topics' : ''}`;
+      button.type = 'button';
+      text.textContent = label;
+      count.className = 'topic-count';
+      count.textContent = `${activeQuestions.length} вопросов`;
+      button.append(text, count);
+      button.addEventListener('click', () => startTest(activeQuestions, testLabel));
+      return button;
+    }
+
+    function renderTestThreeTopics() {
+      els.testThreeTopicGrid.innerHTML = '';
+      els.testThreeTopicGrid.appendChild(createTopicButton(
+        'По всем темам',
+        testThreeQuestions,
+        'Тест 3 · Все темы',
+        true
+      ));
+
+      testThreeTopicLabels.forEach((label, topic) => {
+        const topicQuestions = testThreeQuestions.filter(question => question.topic === topic);
+        els.testThreeTopicGrid.appendChild(createTopicButton(
+          label,
+          topicQuestions,
+          `Тест 3 · ${label}`
+        ));
+      });
     }
 
     function startTest(activeQuestions, label) {
@@ -37737,10 +37888,12 @@
     els.startMeta.textContent = `${allQuestions.length} вопросов всего`;
     els.testOneCount.textContent = `${testOneQuestions.length} вопросов`;
     els.testTwoCount.textContent = `${testTwoQuestions.length} вопросов`;
+    els.testThreeCount.textContent = `${testThreeQuestions.length} вопросов · лучевая диагностика`;
     els.mixedCountHint.textContent = `до ${allQuestions.length} вопросов`;
     els.mixedCount.min = '0';
     els.mixedCount.max = String(allQuestions.length);
     els.mixedCount.value = String(Math.min(50, allQuestions.length));
+    renderTestThreeTopics();
 
     els.testOneBtn.addEventListener('click', () => {
       startTest(testOneQuestions, 'Тест 1');
@@ -37750,7 +37903,14 @@
       startTest(testTwoQuestions, 'Тест 2');
     });
 
+    els.testThreeBtn.addEventListener('click', () => {
+      els.mixedForm.classList.add('is-hidden');
+      els.testThreeTopics.classList.remove('is-hidden');
+      els.testThreeTopicGrid.querySelector('button')?.focus();
+    });
+
     els.mixedBtn.addEventListener('click', () => {
+      els.testThreeTopics.classList.add('is-hidden');
       els.mixedForm.classList.remove('is-hidden');
       els.mixedError.textContent = '';
       updateMixedLimit();
